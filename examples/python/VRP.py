@@ -127,14 +127,17 @@ def main():
     routing.SetArcCostEvaluatorOfAllVehicles(transit_callback_index)
     
     # add distance constraint
+    # dimension: 类，用来跟踪因车辆移动而不断变化的变量（距离、时间等），
+    # 若约束条件或目标函数和此种变量有关系，则应该增加dimension
     dimension_name = 'Distance'
     routing.AddDimension(
-            transit_callback_index,
-            200,  # no slack
-            5000,  # vehicle maximum travel distance
+            transit_callback_index,  # 变量的索引
+            200,  # 最大松弛量，对于时间：允许等待的时间，距离：一般设为0
+            5000,  # 每辆车，随车辆移动最大的累计量，如：每辆车的最大行驶距离
             True,  # start cumul to zero
             dimension_name)
     distance_dimension = routing.GetDimensionOrDie(dimension_name)
+    # global_span_cost = coefficient * (Max(dimension end value) - Min(dimension start value))
     distance_dimension.SetGlobalSpanCostCoefficient(100)
     
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()

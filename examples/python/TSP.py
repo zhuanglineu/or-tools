@@ -34,17 +34,18 @@ def create_data_model():
 def print_solution(manager, routing, assignment):
     """Prints assignment on console."""
     print('Objective: {} miles'.format(assignment.ObjectiveValue()))
-    index = routing.Start(0)
+    index = routing.Start(0)  # 路径起点
     plan_output = 'Route for vehicle 0:\n'
-    route_distance = 0
+    route_distance = 0  # 路径距离
     while not routing.IsEnd(index):
-        plan_output += ' {} ->'.format(manager.IndexToNode(index))
+        plan_output += ' {} ->'.format(manager.IndexToNode(index))  # 将内部索引转为实际节点
         previous_index = index
-        index = assignment.Value(routing.NextVar(index))
-        route_distance += routing.GetArcCostForVehicle(previous_index, index, 0)
+        index = assignment.Value(routing.NextVar(index))  # 下一个索引
+        route_distance += routing.GetArcCostForVehicle(previous_index, index, 0)  # 两个索引间的距离
     plan_output += ' {}\n'.format(manager.IndexToNode(index))
-    print(plan_output)
+#    print(plan_output)
     plan_output += 'Route distance: {}miles\n'.format(route_distance)
+    print(plan_output)
     
 
 def main():
@@ -53,6 +54,7 @@ def main():
     data = create_data_model()
 
     # Create the routing index manager.
+    # manager管理和地点对应的求解器内部变量
     manager = pywrapcp.RoutingIndexManager(len(data['distance_matrix']),
                                            data['num_vehicles'], data['depot'])
 
@@ -67,6 +69,7 @@ def main():
         to_node = manager.IndexToNode(to_index)
         return data['distance_matrix'][from_node][to_node]
 
+    # transit_callback_index可以传给求解器，用来定义arc cost
     transit_callback_index = routing.RegisterTransitCallback(distance_callback)
 
     # Define cost of each arc.
