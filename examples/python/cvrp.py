@@ -128,6 +128,8 @@ def main():
     
     # 建模
     routing = pywrapcp.RoutingModel(manager)
+    collector = routing.solver().AllSolutionCollector()
+
     
     # 创建并注册距离回调函数
     def distance_callback(from_index, to_index):
@@ -160,16 +162,40 @@ def main():
     search_parameters = pywrapcp.DefaultRoutingSearchParameters()
     search_parameters.first_solution_strategy = (
             routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
-    
+
+    capacity_dimension = routing.GetDimensionOrDie('Capacity')    
+    for location_idx in range(len(data['demands'])):
+        index = manager.NodeToIndex(location_idx)
+        capacity_var = capacity_dimension.CumulVar(index)
+        next_var = routing.NextVar(index)
+        collector.Add(capacity_var)
+        collector.Add(next_var)
+    for v in range(data['num_vehicles']):
+        index = routing.Start(v)
+        capacity_var = capacity_dimension.CumulVar(index)
+        next_var = routing.NextVar(index)
+        collector.Add(capacity_var)
+        collector.Add(next_var)
+
+        index = routing.End(v)
+        capacity_var = capacity_dimension.CumulVar(index)
+        collector.Add(capacity_var)
+    routing.AddSearchMonitor(collector)
     # 求解
     assignment = routing.SolveWithParameters(search_parameters)
     
-    if assignment:
-        print_solution(data, manager, routing, assignment)
+    return data, manager, routing, assignment, collector
+
 
 
 if __name__ == '__main__':
-    main()
-
+    data, manager, routing, assignment, collector = main()
+#    if assignment:
+#        print_solution(data, manager, routing, assignment)
+    
+    for i in range(collector.SolutionCount()):
+        print('--------------Solution {}: \n'.format(i))
+        assign = collector.Solution(i)
+        print_solution(data, manager, routing, assign)
 
     

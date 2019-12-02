@@ -71,6 +71,7 @@ def create_data_model():
 # [START solution_printer]
 def print_solution(data, manager, routing, assignment):
     """Prints assignment on console."""
+    print('Objective Value: {}'.format(assignment.ObjectiveValue()))
     time_dimension = routing.GetDimensionOrDie('Time')
     total_time = 0
     for vehicle_id in range(data['num_vehicles']):
@@ -168,7 +169,26 @@ def main():
     search_parameters.first_solution_strategy = (
         routing_enums_pb2.FirstSolutionStrategy.PATH_CHEAPEST_ARC)
     # [END parameters]
+    routing.CloseModelWithParameters(search_parameters)
+    collector = routing.solver().AllSolutionCollector()
+    collector.AddObjective(routing.CostVar())
+    for location_idx in range(len(data['time_windows'])):
+        index = manager.NodeToIndex(location_idx)
+        time_var = time_dimension.CumulVar(index)
+        next_var = routing.NextVar(index)
+        collector.Add(time_var)
+        collector.Add(next_var)
+    for v in range(data['num_vehicles']):
+        index = routing.Start(v)
+        time_var = time_dimension.CumulVar(index)
+        next_var = routing.NextVar(index)
+        collector.Add(time_var)
+        collector.Add(next_var)
 
+        index = routing.End(v)
+        time_var = time_dimension.CumulVar(index)
+        collector.Add(time_var)
+    routing.AddSearchMonitor(collector)
     # Solve the problem.
     # [START solve]
     assignment = routing.SolveWithParameters(search_parameters)
@@ -176,11 +196,18 @@ def main():
 
     # Print solution on console.
     # [START print_solution]
-    if assignment:
-        print_solution(data, manager, routing, assignment)
+    return data, manager, routing, assignment, collector
+
     # [END print_solution]
 
 
 if __name__ == '__main__':
-    main()
+    data, manager, routing, assignment, collector = main()
+    if assignment:
+        print('----------- The Best: \n')
+        print_solution(data, manager, routing, assignment)
+    
+    for i in range(collector.SolutionCount()):
+        print('----------- Solution {}: \n'.format(i))
+        print_solution(data, manager, routing, collector.Solution(i))
 # [END program]
