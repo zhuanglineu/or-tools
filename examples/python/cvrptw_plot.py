@@ -657,6 +657,18 @@ def main():
 
     tot_time_fn_index = routing.RegisterTransitCallback(tot_time_fn)
 
+    for veh in vehicles.vehicles:
+        print('{}: \n'.format(veh.index))
+        for from_order in customers.customers:
+            from_ = manager.NodeToIndex(from_order.index)
+            for to_order in customers.customers:
+                to_ = manager.NodeToIndex(to_order.index)
+                if from_ == -1 or to_ == -1:
+                    continue
+                time = tot_time_fn(from_, to_)
+                print('from {} to {}: {} minute'.
+                      format(from_order.index, to_order.index, time))
+
     # Set the cost function (distance callback) for each arc, homogenious for
     # all vehicles.
     routing.SetArcCostEvaluatorOfAllVehicles(dist_fn_index)
