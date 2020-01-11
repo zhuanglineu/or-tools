@@ -306,7 +306,7 @@ def main():
                 data['demands'][n] * data['time_per_demand_unit'])
 
     break_intervals = {}
-    #for v in xrange(data['num_vehicles']):
+#    for v in xrange(data['num_vehicles']):
     for v in [0]:
         vehicle_break = data['breaks'][v]
         break_intervals[v] = [
